@@ -85,7 +85,7 @@ bool WIFI_HTTPRead(void) {
         while(client.available()) {
             String line = client.readStringUntil('\n');
             line.replace("\r", "\\r");
-            Serial.println(line);
+            Serial.print(line + "\\n");
         }
         return true;
     } else {
