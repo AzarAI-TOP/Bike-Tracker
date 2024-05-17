@@ -1,3 +1,5 @@
+# Hardware fo Bike_Tracker
+
 ## Connect to the device
 
 we use the UART Download Boot as the default boot methods. And the following is the pin connection
