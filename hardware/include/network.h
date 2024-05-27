@@ -5,18 +5,44 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <HTTPClient.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 
-// wifi client instance;
-extern HTTPClient http;
-extern WiFiClient client;
+#include "buzzer.h"
 
-// set up wifi
-bool WIFI_Init(const char *ssid, const char *password);
-void WIFI_printStatus(void);
+#define TIMEOUTTIME 1000
 
-// connect to server
-String HTTP_Get(const char *host, uint16_t port, String uri);
-void HTTP_Close(void);
+String urlEncode(String str);
 
+class NetworkClient {
+private:
+    char *ssid;
+    uint8_t port;
+
+    WiFiClient client;
+public:
+    HTTPClient http;
+    NetworkClient();
+    void NetworkClient_Init(const char *ssid, const char *password);
+    ~NetworkClient(void);
+
+    // set up wifi
+    void printStatus(void);
+
+    // network request
+    String Get(const char *url);
+};
+
+class NetworkServer {
+private:
+    uint8_t port;
+    AsyncWebServer *server;
+public:
+    NetworkServer(uint8_t port, Buzzer& buzzer);
+    ~NetworkServer(void);
+
+};
+
+String processer(const String& var);
 
 #endif
