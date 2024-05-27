@@ -3,11 +3,18 @@
 
 #include <Arduino.h>
 
-#define BUZZER_Port 7
+class Buzzer
+{
+private:
+    uint8_t buzzer_pin;
+public:
+    Buzzer();
+    void Buzzer_Init(uint8_t pin);
+    ~Buzzer();
 
-void Buzzer_Init(void);
-void Buzzer_Beep(int frequency, int milleseconds);
-void Buzzer_On(int frequency);
-void Buzzer_Off(void);
+    void beep(int frequency, int milleseconds);
+    void on(int frequency);
+    void off();
+};
 
 #endif
