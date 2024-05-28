@@ -4,8 +4,9 @@
 #include <Arduino.h>
 #include <TinyGPSPlus.h>
 
-struct GPS_Data
-{
+#define GPS_BAUD 38400
+
+struct GPS_Data {
     // date data
     uint16_t year;
     uint8_t month;
@@ -19,13 +20,10 @@ struct GPS_Data
     double latitude;
     // speed data
     double speed;
-
-    //
 };
 
 
 class GPS {
-
 private:
     TinyGPSPlus gps_parser;
     HardwareSerial gps_serial = Serial1;
@@ -38,7 +36,7 @@ public:
     bool GPS_Available(void);
     int GPS_Read(void);
     void GPS_Parse(void);
-    bool GPS_IsChangedLocation(void);
+    bool GPS_IsChangedLocation(void) const;
     GPS_Data GPS_GetData(void);
 
 };
