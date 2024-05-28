@@ -31,6 +31,10 @@ bool GPS::GPS_IsChangedLocation(void) {
 }
 
 GPS_Data GPS::GPS_GetData(void) {
+    do {
+        GPS_Parse();
+    } while (GPS_IsChangedLocation());
+
     // parse the gps info into structure and return it
     GPS_Data data = {
                 .year = gps_parser.date.year(),
