@@ -1,6 +1,40 @@
 #include "network.h"
 
+// Class -- NetworkURL
+NetworkURL::NetworkURL() {}
+NetworkURL::~NetworkURL() {
+    params.clear();
+}
+
+void NetworkURL::NetworkURL_Init(String host, String port) {
+    url = "http://" + host + ":" + port;
+}
+
+void NetworkURL::addParam(String key, String value) {
+    params.push_back(std::pair<String, String>(key, value));
+}
+
+const char* NetworkURL::c_str() {
+    // construct base url
+    String fullURL = url + "?";
+    // append params
+    bool first = true;
+    for(auto &item:params) {
+        if (!first) {
+            fullURL += "&";
+        }
+        fullURL += item.first + "=" + urlEncode(item.second);
+        first = false;
+    }
+
+    return fullURL.c_str();
+}
+
+// Class -- NetworkClient
 NetworkClient::NetworkClient() {}
+NetworkClient::~NetworkClient(void) {
+    http.end();
+}
 
 void NetworkClient::NetworkClient_Init(const char *ssid, const char *password) {
     // start WiFi
@@ -38,32 +72,6 @@ void NetworkClient::printStatus(void) {
     Serial.printf("\tsignal strength (RSSI): %ld dBm\n", rssi);
 }
 
-NetworkServer::NetworkServer(uint8_t port, Buzzer& buzzer) {
-    server = new AsyncWebServer(port);
-    const char index_html[] PROGMEM = R"rawliteral(<!DOCTYPE HTML><html><head><title>Bike Tracker</title><meta name="viewport"content="width=device-width, initial-scale=1"><style>html{font-family:Arial;display:inline-block;text-align:center}h1{font-size:3.0rem}body{max-width:600px;margin:0px auto;padding-bottom:25px}#header{font-size:2.5rem}li{list-style-type:none}li p{display:inline}#buzzer{-webkit-transition-duration:0.4s;transition-duration:0.4s;padding:16px 32px;text-align:center;border-radius:5px;background-color:#4CAF50;color:black;border:2px solid#4CAF50}#buzzer:active{background-color:#aa4810;color:black;border:2px solid#aa4810}</style></head><body><h1>Bike Tracker</h1><p id="header">Info:</p><ul><li><p>SSID:</p>%PLACEHOLDER_SSID%</li><li><p>IP:</p>%PLACEHOLDER_IP%</li><li><p>Signal Strength(RSSI):</p>%PLACEHOLDER_RSSI%</li></ul><p>-----------------------------------------------------</p><button id="buzzer"onclick="onClick_Buzzer()"onmouseup="onRease_Buzzer()">Buzzer</button><script>function onClick_Buzzer(){var xhr=new XMLHttpRequest();xhr.open("GET","/buzzer_on");xhr.send()}function onRease_Buzzer(){var xhr=new XMLHttpRequest();xhr.open("GET","/buzzer_off");xhr.send()}</script></body></html>)rawliteral";
-
-    server->on("/", HTTP_GET, [index_html](AsyncWebServerRequest *request) {
-        request->send_P(200, String("text/html"), index_html, processer);
-    });
-
-    server->on("/buzzer_on", HTTP_GET, [index_html, &buzzer](AsyncWebServerRequest *request) {
-        buzzer.on(3000);
-        Serial.println("Buzzer On");
-        request->send(200, "text/plain", "OK");
-    });
-
-    server->on("/buzzer_off", HTTP_GET, [index_html, &buzzer](AsyncWebServerRequest *request) {
-        buzzer.off();
-        Serial.println("Buzzer Off");
-        request->send(200, "text/plain", "OK");
-    });
-    server->begin();
-}
-
-NetworkServer::~NetworkServer(void) {
-    delete server;
-}
-
 String processer(const String& var) {
     if (var == "PLACEHOLDER_SSID") {
         return WiFi.SSID();
@@ -92,11 +100,7 @@ String NetworkClient::Get(const char *url) {
     }
 }
 
-NetworkClient::~NetworkClient(void) {
-    http.end();
-}
-
-
+// Utilities
 String urlEncode(String str) {
     String encodedString = "";
     char c;
