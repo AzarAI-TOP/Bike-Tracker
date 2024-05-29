@@ -20,13 +20,14 @@ struct GPS_Data {
     double latitude;
     // speed data
     double speed;
+    bool isMoved;
 };
 
 
 class GPS {
 private:
-    TinyGPSPlus gps_parser;
     HardwareSerial gps_serial = Serial1;
+    TinyGPSPlus gps_parser;
 
 public:
     GPS();

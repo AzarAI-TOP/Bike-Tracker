@@ -1,91 +1,56 @@
 #include "network.h"
 
-// Class -- NetworkURL
-NetworkURL::NetworkURL() {}
-NetworkURL::~NetworkURL() {
-    params.clear();
-}
+NetworkClient::NetworkClient() : ssid(nullptr), port(0), client(), http() {}
 
-void NetworkURL::NetworkURL_Init(String host, String port) {
-    url = "http://" + host + ":" + port;
-}
-
-void NetworkURL::addParam(String key, String value) {
-    params.push_back(std::pair<String, String>(key, value));
-}
-
-const char* NetworkURL::c_str() {
-    // construct base url
-    String fullURL = url + "?";
-    // append params
-    bool first = true;
-    for(auto &item:params) {
-        if (!first) {
-            fullURL += "&";
-        }
-        fullURL += item.first + "=" + urlEncode(item.second);
-        first = false;
-    }
-
-    return fullURL.c_str();
-}
-
-// Class -- NetworkClient
-NetworkClient::NetworkClient() {}
-NetworkClient::~NetworkClient(void) {
+NetworkClient::~NetworkClient() {
     http.end();
+    // 其他资源释放
 }
 
-void NetworkClient::NetworkClient_Init(const char *ssid, const char *password) {
-    // start WiFi
-    WiFi.mode(WIFI_MODE_APSTA);
-    WiFi.useStaticBuffers(true);
+void NetworkClient::initialize(const char *ssid, const char *password, uint8_t port) {
+    this->ssid = ssid;
+    this->port = port;
+
+    WiFi.mode(WIFI_MODE_STA);
     WiFi.begin(ssid, password);
 
-    // wait for connecting
     Serial.printf("\tConnecting to <%s>", ssid);
-    time_t startTime = millis();
+    unsigned long startTime = millis();
     while (WiFi.status() != WL_CONNECTED) {
-        Serial.printf(".");
+        Serial.print(".");
         delay(500);
 
-        // check if program timeout
         if (millis() - startTime > TIMEOUTTIME) {
             Serial.println("Failed to connect to WiFi");
-            ESP.restart();
+            // 这里可以添加重试逻辑或异常处理
         }
     }
-    Serial.println();
+    Serial.println("Connected");
 }
 
-void NetworkClient::printStatus(void) {
-    // print the SSID of the network you're attached to:
-    Serial.printf("\tSSID: %s\n", WiFi.SSID());
+void NetworkClient::printStatus() {
+    static String cachedSSID = WiFi.SSID();
+    static String cachedIP = WiFi.localIP().toString();
+    static long cachedRSSI = WiFi.RSSI();
 
-    // print your WiFi shield's IP address:
-    // IPAddress ip = WiFi.localIP();
-    IPv6Address ip = WiFi.localIPv6();
-    Serial.printf("\tIP Address: %s\n", ip.toString());
-
-    // print the received signal strength:
-    long rssi = WiFi.RSSI();
-    Serial.printf("\tsignal strength (RSSI): %ld dBm\n", rssi);
-}
-
-String processer(const String& var) {
-    if (var == "PLACEHOLDER_SSID") {
-        return WiFi.SSID();
-    } else if (var == "PLACEHOLDER_IP") {
-        return WiFi.localIP().toString();
-    } else if (var == "PLACEHOLDER_RSSI") {
-        return String(WiFi.RSSI());
-    } else {
-        return String();
+    // 如果 WiFi.SSID() 等的值发生了变化，更新缓存
+    if (WiFi.SSID() != cachedSSID) {
+        cachedSSID = WiFi.SSID();
     }
+    if (WiFi.localIP().toString() != cachedIP) {
+        cachedIP = WiFi.localIP().toString();
+    }
+    if (WiFi.RSSI() != cachedRSSI) {
+        cachedRSSI = WiFi.RSSI();
+    }
+
+    Serial.printf("\tSSID: %s\n", cachedSSID);
+    Serial.printf("\tIP Address: %s\n", cachedIP);
+    Serial.printf("\tsignal strength (RSSI): %ld dBm\n", cachedRSSI);
 }
 
-String NetworkClient::Get(const char *url) {
-    http.begin(url);
+String NetworkClient::get(const char *url) {
+    http.begin(client, url);
     int httpCode = http.GET();
     if (httpCode > 0) {
         if (httpCode == HTTP_CODE_OK) {
@@ -93,11 +58,11 @@ String NetworkClient::Get(const char *url) {
             return text;
         } else {
             Serial.printf("Error: bad request with httpCode<%d>\n", httpCode);
-            return String();
         }
     } else {
-        return String();
+        Serial.printf("Error: unable to connect to server\n");
     }
+    return String();
 }
 
 // Utilities

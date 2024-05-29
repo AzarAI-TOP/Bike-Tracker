@@ -57,7 +57,8 @@ GPS_Data GPS::GPS_GetData(void) {
         .second = gps_parser.time.second(),
         .longitude = gps_parser.location.lng(),
         .latitude = gps_parser.location.lat(),
-        .speed = gps_parser.speed.mps()
+        .speed = gps_parser.speed.mps(),
+        .isMoved = gps_parser.location.isUpdated()
     };
     return data;
 }

@@ -13,7 +13,7 @@
 #define PASSWD "12345678"
 
 // server info
-#define SERVER_URL_BASE "http://192.168.128.194:8000/Bike_Tracker/" // 更改IP地址和端口
+#define SERVER_URL_BASE "http://azarai.top:8000/Bike_Tracker/" // 更改IP地址和端口
 #define SERVER_URL_BUZZER SERVER_URL_BASE "getBuzzerStatus/"
 #define SERVER_URL_RECORD SERVER_URL_BASE "getRecordFlag/"
 #define SERVER_URL_GPS SERVER_URL_BASE "updateData/?"
@@ -46,10 +46,9 @@ void setup() {
 
     // start network
     Serial.println("\tConnecting Network.");
-    nclient.NetworkClient_Init(SSID, PASSWD);
+    nclient.initialize(SSID, PASSWD);
     Serial.println("\t\tNetwork Connected.");
 
-    // NetworkServer nserver(80, buzzer);
     // wait for the GPS connecting
     Serial.printf("\tConnecting to GPS");
     gps.GPS_Init(2, 3, GPS_BAUD);
@@ -65,7 +64,7 @@ void setup() {
     // setup timer 0
     setupTimer0(60*1000000); // 60s = 60,000,000us
     // setup timer 1
-    setupTimer0(1*1000000); //  1s =  1,000,000us
+    setupTimer1(1*1000000);  //  1s =  1,000,000us
 }
 
 void sendGPSData(void) {
@@ -77,7 +76,7 @@ void sendGPSData(void) {
     url += "longitude=" + urlEncode(String(data.longitude)) + "&";
     url += "speed=" + urlEncode(String(data.speed));
     // send data
-    String response = nclient.Get(url.c_str());
+    String response = nclient.get(url.c_str());
     Serial.printf("\tSent location data to server - [%s]\n", response.c_str());
 }
 
@@ -88,14 +87,17 @@ void loop() {
     // executing scheduled task
     if (timer0Flag) {
         timer0Flag = false;
-        sendGPSData();
+        if (data.isMoved)
+            sendGPSData();
+        else
+            Serial.print("Not move");
     }
 
     if (timer1Flag) {
         timer1Flag = false;
 
         // get status of buzzer
-        String content = nclient.Get(SERVER_URL_BUZZER);
+        String content = nclient.get(SERVER_URL_BUZZER);
         if (content == "True") {
             buzzer.on(3000);
         } else {
@@ -103,7 +105,7 @@ void loop() {
         }
 
         // get status of record_flag
-        String record_flag = nclient.Get(SERVER_URL_RECORD);
+        String record_flag = nclient.get(SERVER_URL_RECORD);
         if (record_flag == "True") {
             Serial.print("Flag = True ");
             sendGPSData();

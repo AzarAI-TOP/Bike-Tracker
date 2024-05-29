@@ -1,52 +1,36 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-// import Arduino ESP32C3 WiFi Library
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <HTTPClient.h>
-// import STL
-#include <vector>
-#include <utility>
-// import self-made library
-#include "buzzer.h"
 
 #define TIMEOUTTIME 1000
 
-String urlEncode(String str);
-
-class NetworkURL {
-private:
-    String url;
-    std::vector<std::pair<String, String>> params;
-
-public:
-    NetworkURL();
-    ~NetworkURL();
-
-    void NetworkURL_Init(String host, String port);
-    void addParam(String key, String value);
-    const char* c_str();
-};
-
 class NetworkClient {
 private:
-    char *ssid;
+    const char *ssid;
     uint8_t port;
-
     WiFiClient client;
     HTTPClient http;
+
 public:
+    // Constructor with initialization list
     NetworkClient();
-    void NetworkClient_Init(const char *ssid, const char *password);
-    ~NetworkClient(void);
+    ~NetworkClient();
 
-    // set up wifi
-    void printStatus(void);
+    // Set up WiFi
+    void initialize(const char *ssid, const char *password, uint8_t port = 80);
 
-    // network request
-    String Get(const char *url);
+    // Print WiFi status
+    void printStatus();
+
+    // Network request
+    String get(const char *url);
+
 };
 
+// Utilities
+String urlEncode(String str);
 
-#endif
+#endif // NETWORK_H
